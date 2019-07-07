@@ -6,14 +6,14 @@ ENetSocket mssock = ENET_SOCKET_NULL;
 
 void httpgetsend(ENetAddress &ad, char *hostname, char *req, char *ref, char *agent)
 {
-    if(ad.host==ENET_HOST_ANY)
+    if(in6_equal(ad.host, ENET_HOST_ANY))
     {
         printf("looking up %s...\n", hostname);
         enet_address_set_host(&ad, hostname);
-        if(ad.host==ENET_HOST_ANY) return;
+        if(in6_equal(ad.host, ENET_HOST_ANY)) return;
     };
     if(mssock!=ENET_SOCKET_NULL) enet_socket_destroy(mssock);
-    mssock = enet_socket_create(ENET_SOCKET_TYPE_STREAM, NULL);
+    mssock = enet_socket_create(ENET_SOCKET_TYPE_STREAM);
     if(mssock==ENET_SOCKET_NULL) { printf("could not open socket\n"); return; };
     if(enet_socket_connect(mssock, &ad)<0) { printf("could not connect\n"); return; };
     ENetBuffer buf;
@@ -135,7 +135,8 @@ void servermsinit(const char *master, char *sdesc, bool listen)
 	if(listen)
 	{
         ENetAddress address = { ENET_HOST_ANY, CUBE_SERVINFO_PORT };
-        pongsock = enet_socket_create(ENET_SOCKET_TYPE_DATAGRAM, &address);
+        pongsock = enet_socket_create(ENET_SOCKET_TYPE_DATAGRAM);
         if(pongsock == ENET_SOCKET_NULL) fatal("could not create server info socket\n");
+        else enet_socket_bind(pongsock, &address);
 	};
 };
