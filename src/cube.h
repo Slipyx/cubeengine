@@ -275,7 +275,6 @@ enum    // function signatures for script functions, see command.cpp
 #include <GL/glext.h>
 
 #include <SDL.h>
-#include <SDL_image.h>
 
 #include "enet.h"
 // missing enet funcs

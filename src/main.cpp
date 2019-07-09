@@ -45,6 +45,9 @@ void *alloc(int s)              // for some big chunks... most other allocs use 
 int scr_w = 640;
 int scr_h = 480;
 
+VARP(screenwidth, 640, scr_w, 1920);
+VARP(screenheight, 480, scr_h, 1080);
+
 void screenshot()
 {
     SDL_Surface *image;
@@ -87,20 +90,37 @@ int framesinmap = 0;
 int main(int argc, char **argv)
 {    
     bool dedicated = false;
-    int fs = SDL_FULLSCREEN, par = 0, uprate = 0, maxcl = 4;
+    int fs = 0, uprate = 0, maxcl = 4;
     char *sdesc = "", *ip = "", *master = NULL, *passwd = "";
     islittleendian = *((char *)&islittleendian);
 
     #define log(s) conoutf("init: %s", s)
+
     log("sdl");
-    
+
+    if(SDL_Init(SDL_INIT_TIMER|SDL_INIT_VIDEO)<0) fatal("Unable to initialize SDL");
+
+    log("cfg");
+    newmenu("frags\tpj\tping\tteam\tname");
+    newmenu("ping\tplr\tserver");
+    exec("data/keymap.cfg");
+    exec("data/menus.cfg");
+    exec("data/prefabs.cfg");
+    exec("data/sounds.cfg");
+    exec("servers.cfg");
+    if(!execfile("config.cfg")) execfile("data/defaults.cfg");
+    exec("autoexec.cfg");
+
+	scr_w = screenwidth;
+	scr_h = screenheight;
+
     for(int i = 1; i<argc; i++)
     {
         char *a = &argv[i][2];
         if(argv[i][0]=='-') switch(argv[i][1])
         {
             case 'd': dedicated = true; break;
-            case 't': fs     = 0; break;
+            case 't': fs     = SDL_FULLSCREEN; break;
             case 'w': scr_w  = atoi(a); break;
             case 'h': scr_h  = atoi(a); break;
             case 'u': uprate = atoi(a); break;
@@ -113,20 +133,13 @@ int main(int argc, char **argv)
         }
         else conoutf("unknown commandline argument");
     };
-    
-    #ifdef _DEBUG
-    par = SDL_INIT_NOPARACHUTE;
-    fs = 0;
-    #endif
-
-    if(SDL_Init(SDL_INIT_TIMER|SDL_INIT_VIDEO|par)<0) fatal("Unable to initialize SDL");
 
     log("net");
     if(enet_initialize()<0) fatal("Unable to initialise network module");
 
     initclient();
     initserver(dedicated, uprate, sdesc, ip, master, passwd, maxcl);  // never returns if dedicated
-      
+
     log("world");
     empty_world(7, true);
 
@@ -160,17 +173,6 @@ int main(int argc, char **argv)
 
     log("sound");
     initsound();
-
-    log("cfg");
-    newmenu("frags\tpj\tping\tteam\tname");
-    newmenu("ping\tplr\tserver");
-    exec("data/keymap.cfg");
-    exec("data/menus.cfg");
-    exec("data/prefabs.cfg");
-    exec("data/sounds.cfg");
-    exec("servers.cfg");
-    if(!execfile("config.cfg")) execfile("data/defaults.cfg");
-    exec("autoexec.cfg");
 
     log("localconnect");
     localconnect();
