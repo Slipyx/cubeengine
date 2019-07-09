@@ -67,11 +67,15 @@ void cleangl()
     if(qsphere) gluDeleteQuadric(qsphere);
 };
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 bool installtex(int tnum, char *texname, int &xs, int &ys, bool clamp)
 {
-    SDL_Surface *s = IMG_Load(texname);
-    if(!s) { conoutf("couldn't load texture %s", texname); return false; };
-    if(s->format->BitsPerPixel!=24) { conoutf("texture must be 24bpp: %s", texname); return false; };
+	int sw, sh, sn;
+    unsigned char* spixels = stbi_load(texname, &sw, &sh, &sn, 0);//IMG_Load(texname);
+    if(!spixels) { conoutf("couldn't load texture %s", texname); return false; };
+    if(sn!=3) { conoutf("texture must be 24bpp: %s", texname); return false; };
     // loopi(s->w*s->h*3) { uchar *p = (uchar *)s->pixels+i; *p = 255-*p; };  
     glBindTexture(GL_TEXTURE_2D, tnum);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -80,19 +84,19 @@ bool installtex(int tnum, char *texname, int &xs, int &ys, bool clamp)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); //NEAREST);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE); 
-    xs = s->w;
-    ys = s->h;
+    xs = sw;
+    ys = sh;
     while(xs>glmaxtexsize || ys>glmaxtexsize) { xs /= 2; ys /= 2; };
-    void *scaledimg = s->pixels;
-    if(xs!=s->w)
+    void *scaledimg = spixels;
+    if(xs!=sw)
     {
         conoutf("warning: quality loss: scaling %s", texname);     // for voodoo cards under linux
         scaledimg = alloc(xs*ys*3);
-        gluScaleImage(GL_RGB, s->w, s->h, GL_UNSIGNED_BYTE, s->pixels, xs, ys, GL_UNSIGNED_BYTE, scaledimg);
+        gluScaleImage(GL_RGB, sw, sh, GL_UNSIGNED_BYTE, spixels, xs, ys, GL_UNSIGNED_BYTE, scaledimg);
     };
     if(gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGB, xs, ys, GL_RGB, GL_UNSIGNED_BYTE, scaledimg)) fatal("could not build mipmaps");
-    if(xs!=s->w) free(scaledimg);
-    SDL_FreeSurface(s);
+    if(xs!=sw) free(scaledimg);
+	stbi_image_free(spixels);
     return true;
 };
 
