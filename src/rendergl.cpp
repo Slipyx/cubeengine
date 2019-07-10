@@ -22,19 +22,18 @@ int glmaxtexsize = 256;
 void gl_init(int w, int h)
 {
     //#define fogvalues 0.5f, 0.6f, 0.7f, 1.0f
-
     glViewport(0, 0, w, h);
     glClearDepth(1.0);
     glDepthFunc(GL_LESS);
     glEnable(GL_DEPTH_TEST);
     glShadeModel(GL_SMOOTH);
-    
-    
+
+
     glEnable(GL_FOG);
     glFogi(GL_FOG_MODE, GL_LINEAR);
     glFogf(GL_FOG_DENSITY, 0.25);
     glHint(GL_FOG_HINT, GL_NICEST);
-    
+
 
     glEnable(GL_LINE_SMOOTH);
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
@@ -45,7 +44,7 @@ void gl_init(int w, int h)
     glEnable(GL_CULL_FACE);
 
     char *exts = (char *)glGetString(GL_EXTENSIONS);
-    
+
     if(strstr(exts, "GL_EXT_texture_env_combine")) hasoverbright = true;
     else conoutf("WARNING: cannot use overbright lighting, using old lighting model!");
         
@@ -60,7 +59,9 @@ void gl_init(int w, int h)
     glNewList(1, GL_COMPILE);
     gluSphere(qsphere, 1, 12, 6);
     glEndList();
-};
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
 
 void cleangl()
 {
@@ -238,12 +239,7 @@ void addstrip(int tex, int start, int n)
 
 VARFP(gamma, 30, 100, 300,
 {
-    float f = gamma/100.0f;
-    if(SDL_SetGamma(f,f,f)==-1)
-    {
-        conoutf("Could not set gamma (card/driver doesn't support it?)");
-        conoutf("sdl: %s", SDL_GetError());
-    };
+    conoutf("WARNING: gamma setting has been disabled");
 });
 
 void transplayer()

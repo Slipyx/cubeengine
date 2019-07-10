@@ -270,11 +270,10 @@ enum    // function signatures for script functions, see command.cpp
 
 #include <time.h>
 
-#include <GL/gl.h>
 #include <GL/glu.h>
-#include <GL/glext.h>
 
 #include <SDL.h>
+#include <SDL_opengl.h>
 
 #include "enet.h"
 // missing enet funcs

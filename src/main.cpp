@@ -75,10 +75,10 @@ void screenshot()
 COMMAND(screenshot, ARG_NONE);
 COMMAND(quit, ARG_NONE);
 
+bool iskeyrepeat;
 void keyrepeat(bool on)
 {
-    SDL_EnableKeyRepeat(on ? SDL_DEFAULT_REPEAT_DELAY : 0,
-                             SDL_DEFAULT_REPEAT_INTERVAL);
+    iskeyrepeat = on;
 };
 
 VARF(gamespeed, 10, 100, 1000, if(multiplayer()) gamespeed = 100);
@@ -90,7 +90,7 @@ int framesinmap = 0;
 int main(int argc, char **argv)
 {    
     bool dedicated = false;
-    int fs = 0, uprate = 0, maxcl = 4;
+    int fs = SDL_WINDOW_RESIZABLE, uprate = 0, maxcl = 4;
     char *sdesc = "", *ip = "", *master = NULL, *passwd = "";
     islittleendian = *((char *)&islittleendian);
 
@@ -120,7 +120,7 @@ int main(int argc, char **argv)
         if(argv[i][0]=='-') switch(argv[i][1])
         {
             case 'd': dedicated = true; break;
-            case 't': fs     = SDL_FULLSCREEN; break;
+            case 't': fs     = SDL_WINDOW_FULLSCREEN; break;
             case 'w': scr_w  = atoi(a); break;
             case 'h': scr_h  = atoi(a); break;
             case 'u': uprate = atoi(a); break;
@@ -148,13 +148,19 @@ int main(int argc, char **argv)
 
     log("video: mode");
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    if(SDL_SetVideoMode(scr_w, scr_h, 0, SDL_OPENGL|fs)==NULL) fatal("Unable to create OpenGL screen");
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-    log("video: misc");
-    SDL_WM_SetCaption("cube engine", NULL);
-    SDL_WM_GrabInput(SDL_GRAB_ON);
+    SDL_Window* window = SDL_CreateWindow("cube engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        scr_w, scr_h, SDL_WINDOW_SHOWN|SDL_WINDOW_OPENGL|fs);
+    if(window == NULL) fatal("Unable to create SDL window");
+    SDL_GLContext glcontext = SDL_GL_CreateContext(window);
+    if(glcontext == NULL) fatal("Unable to create GL context");
+    SDL_GL_MakeCurrent(window, glcontext);
+
+    SDL_StopTextInput();
+    SDL_SetRelativeMouseMode(SDL_TRUE);
     keyrepeat(false);
-    SDL_ShowCursor(0);
 
     log("gl");
     gl_init(scr_w, scr_h);
@@ -193,7 +199,7 @@ int main(int argc, char **argv)
         fps = (1000.0f/curtime+fps*50)/51;
         computeraytable(player1->o.x, player1->o.y);
         readdepth(scr_w, scr_h);
-        SDL_GL_SwapBuffers();
+        SDL_GL_SwapWindow(window);
         extern void updatevol(); updatevol();
         if(framesinmap++<5)	// cheap hack to get rid of initial sparklies, even when triple buffering etc.
         {
@@ -212,28 +218,36 @@ int main(int argc, char **argv)
                     quit();
                     break;
 
-                case SDL_KEYDOWN: 
-                case SDL_KEYUP: 
-                    keypress(event.key.keysym.sym, event.key.state==SDL_PRESSED, event.key.keysym.unicode);
-                    break;
+                case SDL_TEXTINPUT:
+                    textinput(event.text.text); break;
+
+                case SDL_KEYDOWN:
+                case SDL_KEYUP: {
+                    if(event.key.repeat && !iskeyrepeat) break;
+                    keypress(event.key.keysym.sym, event.key.state==SDL_PRESSED);
+                } break;
 
                 case SDL_MOUSEMOTION:
-                    if(ignore) { ignore--; break; };
+                    if(ignore) { ignore--; break; }
                     mousemove(event.motion.xrel, event.motion.yrel);
                     break;
+
+                case SDL_MOUSEWHEEL: {
+                    if(event.wheel.y<0) keypress(-5,true);
+                    else if(event.wheel.y>0) keypress(-4,true);
+                } break;
 
                 case SDL_MOUSEBUTTONDOWN:
                 case SDL_MOUSEBUTTONUP:
                     if(lasttype==event.type && lastbut==event.button.button) break; // why?? get event twice without it
-                    keypress(-event.button.button, event.button.state!=0, 0);
+                    keypress(-event.button.button, event.button.state!=0);
                     lasttype = event.type;
                     lastbut = event.button.button;
                     break;
-            };
-        };
-    };
+            }
+        }
+    }
     quit();
     return 1;
-};
-
+}
 

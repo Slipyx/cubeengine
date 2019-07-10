@@ -96,60 +96,40 @@ void bindkey(char *key, char *action)
         return;
     };
     conoutf("unknown key \"%s\"", key);   
-};
+}
 
 COMMANDN(bind, bindkey, ARG_2STR);
 
 void saycommand(char *init)                         // turns input to the command line on or off
 {
-    SDL_EnableUNICODE(saycommandon = (init!=NULL));
+    saycommandon = (init!=NULL);
+    if(saycommandon)
+    {
+        //SDL_SetRelativeMouseMode(SDL_FALSE);
+        SDL_StartTextInput();
+    }
+    else
+    {
+        //SDL_SetRelativeMouseMode(SDL_TRUE);
+        SDL_StopTextInput();
+    }
     if(!editmode) keyrepeat(saycommandon);
     if(!init) init = "";
     strcpy_s(commandbuf, init);
-};
+}
 
-void mapmsg(char *s) { strn0cpy(hdr.maptitle, s, 128); };
+void mapmsg(char *s) { strn0cpy(hdr.maptitle, s, 128); }
 
 COMMAND(saycommand, ARG_VARI);
 COMMAND(mapmsg, ARG_1STR);
 
-#ifndef WIN32
-#include <X11/Xlib.h>
-#include <SDL_syswm.h>
-#endif
-
 void pasteconsole()
 {
-    #ifdef WIN32
-    if(!IsClipboardFormatAvailable(CF_TEXT)) return; 
-    if(!OpenClipboard(NULL)) return;
-    char *cb = (char *)GlobalLock(GetClipboardData(CF_TEXT));
+    char* cb = SDL_GetClipboardText();
+    if(!cb) return;
     strcat_s(commandbuf, cb);
-    GlobalUnlock(cb);
-    CloseClipboard();
-    #else
-    SDL_SysWMinfo wminfo;
-    SDL_VERSION(&wminfo.version); 
-    wminfo.subsystem = SDL_SYSWM_X11;
-    if(!SDL_GetWMInfo(&wminfo)) return;
-    int cbsize;
-    char *cb = XFetchBytes(wminfo.info.x11.display, &cbsize);
-    if(!cb || !cbsize) return;
-    int commandlen = strlen(commandbuf);
-    for(char *cbline = cb, *cbend; commandlen + 1 < _MAXDEFSTR && cbline < &cb[cbsize]; cbline = cbend + 1)
-    {
-        cbend = (char *)memchr(cbline, '\0', &cb[cbsize] - cbline);
-        if(!cbend) cbend = &cb[cbsize];
-        if(commandlen + cbend - cbline + 1 > _MAXDEFSTR) cbend = cbline + _MAXDEFSTR - commandlen - 1;
-        memcpy(&commandbuf[commandlen], cbline, cbend - cbline);
-        commandlen += cbend - cbline;
-        commandbuf[commandlen] = '\n';
-        if(commandlen + 1 < _MAXDEFSTR && cbend < &cb[cbsize]) ++commandlen;
-        commandbuf[commandlen] = '\0';
-    };
-    XFree(cb);
-    #endif
-};
+    SDL_free(cb);
+}
 
 cvector vhistory;
 int histpos = 0;
@@ -163,11 +143,16 @@ void history(int n)
         execute(vhistory[vhistory.length()-n-1]);
         rec = false;
     };
-};
+}
 
 COMMAND(history, ARG_1INT);
 
-void keypress(int code, bool isdown, int cooked)
+void textinput(char* text)
+{
+    strcat_s(commandbuf, text);
+}
+
+void keypress(int code, bool isdown)
 {
     if(saycommandon)                                // keystrokes go to commandline
     {
@@ -202,9 +187,8 @@ void keypress(int code, bool isdown, int cooked)
                     if(SDL_GetModState()&(KMOD_LCTRL|KMOD_RCTRL)) { pasteconsole(); return; };
 
                 default:
-                    resetcomplete();
-                    if(cooked) { char add[] = { cooked, 0 }; strcat_s(commandbuf, add); };
-            };
+                    resetcomplete(); break;
+            }
         }
         else
         {
@@ -215,18 +199,18 @@ void keypress(int code, bool isdown, int cooked)
                     if(vhistory.empty() || strcmp(vhistory.last(), commandbuf))
                     {
                         vhistory.add(newstring(commandbuf));  // cap this?
-                    };
+                    }
                     histpos = vhistory.length();
                     if(commandbuf[0]=='/') execute(commandbuf, true);
                     else toserver(commandbuf);
-                };
+                }
                 saycommand(NULL);
             }
             else if(code==SDLK_ESCAPE)
             {
                 saycommand(NULL);
-            };
-        };
+            }
+        }
     }
     else if(!menukey(code, isdown))                 // keystrokes go to menu
     {
@@ -234,11 +218,11 @@ void keypress(int code, bool isdown, int cooked)
         {
             string temp;
             strcpy_s(temp, keyms[i].action);
-            execute(temp, isdown); 
+            execute(temp, isdown);
             return;
-        };
-    };
-};
+        }
+    }
+}
 
 char *getcurcommand()
 {
@@ -252,3 +236,4 @@ void writebinds(FILE *f)
         if(*keyms[i].action) fprintf(f, "bind \"%s\" [%s]\n", keyms[i].name, keyms[i].action);
     };
 };
+

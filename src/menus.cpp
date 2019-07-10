@@ -113,7 +113,10 @@ COMMAND(newmenu, ARG_1STR);
 
 bool menukey(int code, bool isdown)
 {
-    if(vmenu<=0) return false;
+    // reshow mouse when in menu or pass on to in-game input
+    if(vmenu<=0) { SDL_SetRelativeMouseMode(SDL_TRUE); return false; }
+    else SDL_SetRelativeMouseMode(SDL_FALSE);
+
     int menusel = menus[vmenu].menusel;
     if(isdown)
     {

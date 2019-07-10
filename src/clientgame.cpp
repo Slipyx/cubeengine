@@ -22,6 +22,7 @@ int curtime = 10;
 string clientmap;
 
 extern int framesinmap;
+extern int vmenu; // for detecting if in-menu
 
 char *getclientmap() { return clientmap; };
 
@@ -333,6 +334,7 @@ void fixplayer1range()
 
 void mousemove(int dx, int dy)
 {
+    if(vmenu>0) return; // disable mouselook when in menu
     if(player1->state==CS_DEAD || intermission) return;
     const float SENSF = 33.0f;     // try match quake sens
     player1->yaw += (dx/SENSF)*(sensitivity/(float)sensitivityscale);
