@@ -60,6 +60,8 @@ void gl_init(int w, int h)
     glNewList(1, GL_COMPILE);
     gluSphere(qsphere, 1, 12, 6);
     glEndList();
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 };
 
 void cleangl()
