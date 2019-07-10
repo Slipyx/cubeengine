@@ -230,7 +230,7 @@ void updateworld(int millis)        // main game update loop
         {
             if(getclientnum()>=0) shoot(player1, worldpos);     // only shoot when connected to server
             gets2c();           // do this first, so we have most accurate information when our player moves
-        };
+        }
         otherplayers();
         if(!demoplayback)
         {
@@ -248,12 +248,13 @@ void updateworld(int millis)        // main game update loop
             {
                 moveplayer(player1, 20, true);
                 checkitems();
-            };
+            }
             c2sinfo(player1);   // do this last, to reduce the effective frame lag
-        };
-    };
+        }
+        if(vmenu>0 && player1->attacking) player1->attacking = false; // disable attacking when in-menu
+    }
     lastmillis = millis;
-};
+}
 
 void entinmap(dynent *d)    // brute force but effective way to find a free spawn spot in the map
 {
@@ -311,7 +312,7 @@ void attack(bool on)
     if(intermission) return;
     if(editmode) editdrag(on);
     else if(player1->attacking = on) respawn();
-};
+}
 
 void jumpn(bool on) { if(!intermission && (player1->jumpnext = on)) respawn(); };
 

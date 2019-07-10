@@ -113,9 +113,14 @@ COMMAND(newmenu, ARG_1STR);
 
 bool menukey(int code, bool isdown)
 {
-    // reshow mouse when in menu or pass on to in-game input
-    if(vmenu<=0) { SDL_SetRelativeMouseMode(SDL_TRUE); return false; }
-    else SDL_SetRelativeMouseMode(SDL_FALSE);
+    // hide cursor and ignore menu input if not in-menu
+    if(vmenu<=0)
+    {
+        SDL_SetRelativeMouseMode(SDL_TRUE);
+        return false;
+    }
+    // show cursor in menus
+    SDL_SetRelativeMouseMode(SDL_FALSE);
 
     int menusel = menus[vmenu].menusel;
     if(isdown)
@@ -145,4 +150,5 @@ bool menukey(int code, bool isdown)
         };
     };
     return true;
-};
+}
+

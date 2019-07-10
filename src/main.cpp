@@ -120,7 +120,7 @@ int main(int argc, char **argv)
         if(argv[i][0]=='-') switch(argv[i][1])
         {
             case 'd': dedicated = true; break;
-            case 't': fs     = SDL_WINDOW_FULLSCREEN; break;
+            case 't': fs     = SDL_WINDOW_FULLSCREEN_DESKTOP; break;
             case 'w': scr_w  = atoi(a); break;
             case 'h': scr_h  = atoi(a); break;
             case 'u': uprate = atoi(a); break;
@@ -157,6 +157,8 @@ int main(int argc, char **argv)
     SDL_GLContext glcontext = SDL_GL_CreateContext(window);
     if(glcontext == NULL) fatal("Unable to create GL context");
     SDL_GL_MakeCurrent(window, glcontext);
+    // ensure scr_w and scr_h are actual screen size
+    SDL_GL_GetDrawableSize(window, &scr_w, &scr_h);
 
     SDL_StopTextInput();
     SDL_SetRelativeMouseMode(SDL_TRUE);
@@ -217,6 +219,15 @@ int main(int argc, char **argv)
                 case SDL_QUIT:
                     quit();
                     break;
+
+                case SDL_WINDOWEVENT: {
+                    if(event.window.event==SDL_WINDOWEVENT_RESIZED) {
+                        //scr_w = event.window.data1;
+                        //scr_h = event.window.data2;
+                        SDL_GL_GetDrawableSize(window, &scr_w, &scr_h);
+                        glViewport(0, 0, scr_w, scr_h);
+                    }
+                } break;
 
                 case SDL_TEXTINPUT:
                     textinput(event.text.text); break;
