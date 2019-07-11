@@ -7,6 +7,10 @@
 float rdist[NUMRAYS];
 bool ocull = true;
 float odist = 256;
+// for calculating actual hfov
+extern int scr_w;
+extern int scr_h;
+extern float gfovy;
 
 void toggleocull() { ocull = !ocull; };
 
@@ -22,7 +26,7 @@ void computeraytable(float vx, float vy)
     odist = getvar("fog")*1.5f;
 
     float apitch = (float)fabs(player1->pitch);
-    float af = getvar("fov")/2+apitch/1.5f+3;
+    float af = (gfovy*((float)scr_w/scr_h))/2+apitch/1.5f+3;
     float byaw = (player1->yaw-90+af)/360*PI2;
     float syaw = (player1->yaw-90-af)/360*PI2;
 

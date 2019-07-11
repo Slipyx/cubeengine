@@ -249,7 +249,7 @@ void distlod(int &low, int &high, int angle, float widef)
 void render_world(float vx, float vy, float vh, int yaw, int pitch, float fov, int w, int h)
 {
     loopi(LARGEST_FACTOR) stats[i] = 0;
-    min_lod = MIN_LOD+abs(pitch)/12;
+    min_lod = MIN_LOD+90.0f/12; // ignore pitch for lod
     yaw = 360-yaw;
     float widef = fov/75.0f;
     int cdist = abs(yaw%90-45);

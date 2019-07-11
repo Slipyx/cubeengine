@@ -11,6 +11,8 @@
 #endif
 
 extern int curvert;
+extern int scr_w;
+extern int scr_h;
 
 bool hasoverbright = false;
 
@@ -18,6 +20,19 @@ void purgetextures();
 
 GLUquadricObj *qsphere = NULL;
 int glmaxtexsize = 256;
+
+// constant fovy. changes based on h fov var
+float gfovy = 0;
+
+void gl_updatefov(int w, int h);
+VARFP(fov, 10, 105, 120, { gl_updatefov(scr_w, scr_h); });
+
+void gl_updatefov(int w, int h)
+{
+    // update constant fovy based on current fov var for a 4:3 aspect
+    float asp = (float)w / h;
+    gfovy = 1.0f / asp * (fov * (asp / (4.0f / 3.0f)));
+}
 
 void gl_init(int w, int h)
 {
@@ -28,12 +43,10 @@ void gl_init(int w, int h)
     glEnable(GL_DEPTH_TEST);
     glShadeModel(GL_SMOOTH);
 
-
     glEnable(GL_FOG);
     glFogi(GL_FOG_MODE, GL_LINEAR);
     glFogf(GL_FOG_DENSITY, 0.25);
     glHint(GL_FOG_HINT, GL_NICEST);
-
 
     glEnable(GL_LINE_SMOOTH);
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
@@ -60,6 +73,7 @@ void gl_init(int w, int h)
     gluSphere(qsphere, 1, 12, 6);
     glEndList();
 
+    gl_updatefov(w, h);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -253,8 +267,6 @@ void transplayer()
     glTranslated(-player1->o.x, (player1->state==CS_DEAD ? player1->eyeheight-0.2f : 0)-player1->o.z, -player1->o.y);   
 };
 
-VARP(fov, 10, 105, 120);
-
 int xtraverts;
 
 VAR(fog, 64, 180, 1024);
@@ -302,10 +314,10 @@ void drawhudgun(float fovy, float aspect, int farplane)
 void gl_drawframe(int w, int h, float curfps)
 {
     float hf = hdr.waterlevel-0.3f;
-    float fovy = (float)fov*h/w;
+    float fovy = gfovy;
     float aspect = w/(float)h;
     bool underwater = player1->o.z<hf;
-    
+
     glFogi(GL_FOG_START, (fog+64)/8);
     glFogi(GL_FOG_END, fog);
     float fogc[4] = { (fogcolour>>16)/256.0f, ((fogcolour>>8)&255)/256.0f, (fogcolour&255)/256.0f, 1.0f };
@@ -336,12 +348,12 @@ void gl_drawframe(int w, int h, float curfps)
     skyoglid = lookuptexture(DEFAULT_SKY, xs, ys);
    
     resetcubes();
-            
+
     curvert = 0;
     strips.setsize(0);
   
     render_world(player1->o.x, player1->o.y, player1->o.z, 
-            (int)player1->yaw, (int)player1->pitch, (float)fov, w, h);
+            (int)player1->yaw, (int)player1->pitch, fovy*aspect, w, h);
     finishstrips();
 
     setupworld();

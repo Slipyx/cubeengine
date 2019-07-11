@@ -251,7 +251,9 @@ void updateworld(int millis)        // main game update loop
             }
             c2sinfo(player1);   // do this last, to reduce the effective frame lag
         }
-        if(vmenu>0 && player1->attacking) player1->attacking = false; // disable attacking when in-menu
+        // disable attacking when in menu, editmode, or console
+        if(player1->attacking && (vmenu>0 || editmode || getcurcommand()))
+            player1->attacking = false;
     }
     lastmillis = millis;
 }
