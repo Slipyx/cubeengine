@@ -42,20 +42,37 @@ void *alloc(int s)              // for some big chunks... most other allocs use 
     return b;
 };
 
+SDL_Window* window = nullptr;
+
 int scr_w = 640;
 int scr_h = 480;
 
-VARP(screenwidth, 640, scr_w, 1920);
-VARP(screenheight, 480, scr_h, 1080);
+void resized(int w, int h)
+{
+    conoutf("resize!");
+    SDL_GL_GetDrawableSize(window, &scr_w, &scr_h);
+    glViewport(0, 0, scr_w, scr_h);
+}
+
+VARFP(screenwidth, 320, scr_w, 1920, {
+    scr_w = screenwidth;
+    SDL_SetWindowSize(window, scr_w, scr_h);
+    resized(scr_w, scr_h);
+});
+VARFP(screenheight, 240, scr_h, 1080, {
+    scr_h = screenheight;
+    SDL_SetWindowSize(window, scr_w, scr_h);
+    resized(scr_w, scr_h);
+});
 
 void screenshot()
 {
     SDL_Surface *image;
     SDL_Surface *temp;
     int idx;
-    if(image = SDL_CreateRGBSurface(SDL_SWSURFACE, scr_w, scr_h, 24, 0x0000FF, 0x00FF00, 0xFF0000, 0))
+    if((image = SDL_CreateRGBSurface(SDL_SWSURFACE, scr_w, scr_h, 24, 0x0000FF, 0x00FF00, 0xFF0000, 0)))
     {
-        if(temp  = SDL_CreateRGBSurface(SDL_SWSURFACE, scr_w, scr_h, 24, 0x0000FF, 0x00FF00, 0xFF0000, 0))
+        if((temp  = SDL_CreateRGBSurface(SDL_SWSURFACE, scr_w, scr_h, 24, 0x0000FF, 0x00FF00, 0xFF0000, 0)))
         {
             glReadPixels(0, 0, scr_w, scr_h, GL_RGB, GL_UNSIGNED_BYTE, image->pixels);
             for (idx = 0; idx<scr_h; idx++)
@@ -151,7 +168,7 @@ int main(int argc, char **argv)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-    SDL_Window* window = SDL_CreateWindow("cube engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+    window = SDL_CreateWindow("cube engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         scr_w, scr_h, SDL_WINDOW_SHOWN|SDL_WINDOW_OPENGL|fs);
     if(window == NULL) fatal("Unable to create SDL window");
     SDL_GLContext glcontext = SDL_GL_CreateContext(window);
@@ -222,10 +239,7 @@ int main(int argc, char **argv)
 
                 case SDL_WINDOWEVENT: {
                     if(event.window.event==SDL_WINDOWEVENT_RESIZED) {
-                        //scr_w = event.window.data1;
-                        //scr_h = event.window.data2;
-                        SDL_GL_GetDrawableSize(window, &scr_w, &scr_h);
-                        glViewport(0, 0, scr_w, scr_h);
+                        resized(event.window.data1,event.window.data2);
                     }
                 } break;
 
